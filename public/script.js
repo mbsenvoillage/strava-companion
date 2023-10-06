@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { isAuthorized } = await response.json();
     if (isAuthorized) {
         startAuthButton.style.display = 'none';
-        messageDiv.textContent = 'You are already authorized with Strava!';
+        messageDiv.textContent = 'Welcome to strava companion!';
     }
 
   

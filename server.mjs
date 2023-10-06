@@ -1,6 +1,7 @@
 import express from "express"
 import fetch from "node-fetch";
 import path from 'path';
+import mongoose from 'mongoose';
 
 const app = express();
 const PORT = 3000;
@@ -10,7 +11,18 @@ const STRAVA_CLIENT_SECRET = '15b4bb49da6be708e05fcfe75e1b969eea50010f';
 const REDIRECT_URI = 'http://localhost:3000/strava-redirect';
 
 let accessToken = '';
-let isAuthorized = false;  
+
+
+
+const authorizationSchema = new mongoose.Schema({
+    accessToken: String,
+    refreshToken: String,
+    expiresIn: Date,
+    athlete: Object
+});
+
+const Authorization = mongoose.model('Authorization', authorizationSchema);
+
 
 
 app.use(express.static(path.join(process.cwd(), 'public')));
@@ -30,28 +42,51 @@ app.get('/strava-redirect', async (req, res) => {
     const authorizationCode = req.query.code;
 
     if (!authorizationCode) {
-     
-        return res.redirect('http://localhost:3000/error?message=No authorization code provided.');
+        return res.redirect('/error?message=No authorization code provided.');
     }
 
     try {
-        const tokenData = await exchangeAuthorizationCodeForToken(authorizationCode);
+        let authData = await Authorization.findOne();
+
+        if (!authData || new Date(authData.expiresIn) <= new Date()) {
+            const tokenData = await exchangeAuthorizationCodeForToken(authorizationCode);
+            authData = new Authorization({
+                accessToken: tokenData.access_token,
+                refreshToken: tokenData.refresh_token,
+                expiresIn: new Date(Date.now() + (tokenData.expires_in * 1000)),  // Convert seconds to milliseconds
+                athlete: tokenData.athlete
+            });
+            await authData.save();
+
+            accessToken = tokenData.access_token
+        }
+        
      
-
-        accessToken = tokenData.access_token;
-
-        isAuthorized = true;
-      
+        
+        
         res.redirect('/');
     } catch (error) {
-      
+          
         res.redirect(`/error.html?message=${encodeURIComponent(error.message)}`);
     }
 });
 
-app.get('/authorization-status', (req, res) => {
-    res.json({ isAuthorized });
+
+app.get('/authorization-status', async (req, res) => {
+    try {
+        const authData = await Authorization.findOne();
+        
+        const isAuthorized = authData && new Date(authData.expiresIn) > new Date();
+
+        accessToken = authData.accessToken
+
+        res.json({ isAuthorized });
+    } catch (error) {
+        console.error('Error checking authorization status:', error);
+        res.status(500).json({ isAuthorized: false });
+    }
 });
+
 
 app.get('/athlete', async (req, res) => {
     if (!accessToken) {
@@ -139,6 +174,7 @@ app.get('/athlete/week-stats', async (req, res) => {
                 stats.totalPower += activity.average_watts || 0; // Some activities might not have power data
                 stats.activitiesCount += 1;
                 stats.elevationGain += activity.total_elevation_gain;
+                stats.totalkCals += activity.kilojoules 
                 return stats;
             }, {
                 totalDistance: 0,
@@ -146,7 +182,8 @@ app.get('/athlete/week-stats', async (req, res) => {
                 totalHeartRate: 0,
                 totalPower: 0,
                 activitiesCount: 0,
-                elevationGain: 0
+                elevationGain: 0,
+                totalkCals: 0
             });
 
    
@@ -160,7 +197,8 @@ app.get('/athlete/week-stats', async (req, res) => {
             averageSpeedKmH: averageSpeed * 3.6, // Convert m/s to km/h
             averageHeartRate: averageHeartRate,
             averagePower: averagePower,
-            elevationGain: weeklyStats.elevationGain
+            elevationGain: weeklyStats.elevationGain,
+            totalkCals: weeklyStats.totalkCals
         });
     } catch (error) {
         res.json({ error: error.message });
@@ -223,7 +261,23 @@ function getStartOfWeek(date) {
 }
 
 
+const MONGO_URI = 'mongodb://localhost:27017/stravaOAuth'; 
 
-app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-});
+mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => {
+        app.listen(PORT, async () => {
+            console.log(`Server listening on http://localhost:${PORT}`);
+            try {
+                const authData = await Authorization.findOne();
+                accessToken = authData.accessToken
+        
+                
+            } catch (error) {
+                console.error('Error checking authorization status:', error);
+              
+            }
+        });
+    })
+    .catch(err => {
+        console.error('Failed to connect to MongoDB', err);
+    });
