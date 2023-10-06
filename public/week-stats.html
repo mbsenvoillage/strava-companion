@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week's Stats</title>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/week-stats.html">Weekly Stats</a>
+        <a href="/ahtlete.html">Athlete</a>
+        <a href="/last-activity.html">Last Activity</a>
+        <a href="/week-activities.html">Week Activities</a>
+    </nav>
+    <h1>Weekly Stats</h1>
+    <ul id="statsList">
+        <li>Loading...</li>
+    </ul>
+    <script>
+        async function fetchWeekStats() {
+            const response = await fetch('/athlete/week-stats');
+            const data = await response.json();
+            const statsList = document.getElementById('statsList');
+            
+            statsList.innerHTML = `
+                <li>Total Distance: ${data.totalDistanceInKm.toFixed(2)} km</li>
+                <li>Total Elevation: ${data.elevationGain.toFixed(0)} meters</li>
+                <li>Total Time: ${(data.totalTimeInSeconds / 3600).toFixed(2)} hours</li>
+                <li>Average Speed: ${data.averageSpeedKmH.toFixed(2)} km/h</li>
+                <li>Average Heart Rate: ${Math.round(data.averageHeartRate)} bpm</li>
+                <li>Average Power: ${Math.round(data.averagePower)} watts</li>
+            `;
+        }
+        fetchWeekStats();
+    </script>
+</body>
+</html>

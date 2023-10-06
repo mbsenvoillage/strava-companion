@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athlete Data</title>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/week-stats.html">Weekly Stats</a>
+        <a href="/ahtlete.html">Athlete</a>
+        <a href="/last-activity.html">Last Activity</a>
+        <a href="/week-activities.html">Week Activities</a>
+    </nav>
+    <h1>Athlete Data</h1>
+    <pre id="athleteData"></pre>
+    <script>
+        async function fetchAthleteData() {
+            const response = await fetch('http://localhost:3000/athlete');
+            console.log(response)
+            const data = await response.json();
+            document.getElementById('athleteData').innerText = JSON.stringify(data, null, 2);
+        }
+        fetchAthleteData();
+    </script>
+</body>
+</html>

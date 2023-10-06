@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorization Error</title>
+</head>
+<body>
+    <h1>Authorization Error</h1>
+    <p id="errorMessage">An error occurred while trying to authorize with Strava.</p>
+    <a href="/">Back to Home</a>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('message')) {
+            document.getElementById('errorMessage').innerText = params.get('message');
+        }
+    </script>
+</body>
+</html>

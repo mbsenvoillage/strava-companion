@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last Activity</title>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/week-stats.html">Weekly Stats</a>
+        <a href="/ahtlete.html">Athlete</a>
+        <a href="/last-activity.html">Last Activity</a>
+        <a href="/week-activities.html">Week Activities</a>
+    </nav>
+    <h1>Last Activity</h1>
+    <pre id="activityData"></pre>
+    <script>
+        async function fetchLastActivity() {
+            const response = await fetch('/athlete/last-activity');
+            const data = await response.json();
+            document.getElementById('activityData').innerText = JSON.stringify(data, null, 2);
+        }
+        fetchLastActivity();
+    </script>
+</body>
+</html>
